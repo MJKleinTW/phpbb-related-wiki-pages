@@ -1,0 +1,9 @@
+services:
+    mjklein.relatedwiki.listener:
+        class: mjklein\relatedwiki\event\listener
+        arguments:
+            - '@template'
+            - '@cache.driver'
+            - '@auth'
+        tags:
+            - { name: event.listener }

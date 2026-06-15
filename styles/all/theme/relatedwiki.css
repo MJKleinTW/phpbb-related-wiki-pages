@@ -1,0 +1,35 @@
+.relatedwiki-panel {
+    margin: 14px 0 18px 0;
+    border: 2px solid #4f6f8f;
+    background: #eef4fa;
+    border-radius: 6px;
+}
+
+.relatedwiki-panel .inner {
+    padding: 12px 14px;
+}
+
+.relatedwiki-panel h3 {
+    font-size: 1.25em;
+    margin: 0 0 8px 0;
+    color: #234766;
+    font-weight: bold;
+}
+
+.relatedwiki-panel h3::before {
+    content: "📘 ";
+}
+
+.relatedwiki-list {
+    margin: 0;
+    padding-left: 1.6em;
+    font-size: 1.12em;
+}
+
+.relatedwiki-list li {
+    margin: 0.35em 0;
+}
+
+.relatedwiki-list a {
+    font-weight: bold;
+}
