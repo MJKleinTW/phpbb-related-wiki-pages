@@ -1,81 +1,112 @@
 # Related Wiki Pages for phpBB
 
-Version: 0.4.0
+Version: 0.4.0-alpha
 
-This phpBB extension shows a "Related Wiki Pages" box on topic pages.
+This phpBB extension shows a **Related Wiki Pages** box on phpBB topic pages.
 
-It searches the Behringer World MediaWiki using the current topic title plus optional first-post text, then displays matching wiki pages.
+It searches a configured MediaWiki site using the current topic title and optional first-post text, then displays matching wiki pages inside the phpBB topic view.
 
-## New in 0.4
+This was originally developed for Behringer World to connect forum discussions with related MediaWiki documentation.
 
-- Uses first-post text as an additional search signal.
-- Keeps the topic title as the primary search signal.
-- Adds domain-specific BW aliases such as Dante, MIDI, OSC, Hub4, DP48, Ultranet, stagebox, S16, routing, etc.
-- Cache key includes topic title, first-post timestamp, and a short first-post text hash.
-- If the first post is edited, results refresh automatically after the cache key changes.
-- Keeps v0.3 duplicate removal.
-- Keeps wiki links opening in a new tab/window.
-- Keeps admin-only test mode enabled by default.
-- Includes the stronger visible box CSS.
+## Project status
+
+This is an early proof-of-concept extension.
+
+It is working in limited testing, but it is not yet a polished public phpBB extension. It needs review, cleanup, ACP configuration options, language file support, ranking improvements, and general hardening by someone with more phpBB extension development experience.
+
+Developers are welcome to fork this project, improve it, or turn it into a more complete and generally usable phpBB extension.
+
+## Current features
+
+* Displays related MediaWiki pages inside phpBB topic pages
+* Uses the topic title as the primary search signal
+* Can also use first-post text as an additional search signal
+* Uses MediaWiki's API for searching
+* Removes duplicate wiki results
+* Includes simple keyword cleanup
+* Includes optional alias searches for site-specific terminology
+* Opens wiki links in a new tab/window
+* Caches results for 24 hours
+* Does not modify the phpBB database
 
 ## Safety default
 
+Admin-only test mode is enabled by default.
+
 In:
 
-    ext/mjklein/relatedwiki/event/listener.php
+```text
+ext/mjklein/relatedwiki/event/listener.php
+```
 
 the setting is:
 
-    protected $admin_only_test_mode = true;
+```php
+protected $admin_only_test_mode = true;
+```
 
 That means only board admins trigger the wiki API lookup and only board admins see the Related Wiki Pages box.
 
-Normal users will not see anything until you change it to:
+Normal users will not see anything until this is changed to:
 
-    protected $admin_only_test_mode = false;
+```php
+protected $admin_only_test_mode = false;
+```
 
-## Install / update
+## Install
 
-Upload the folder structure to:
+Upload the extension to:
 
-    ext/mjklein/relatedwiki/
+```text
+/ext/mjklein/relatedwiki/
+```
 
-Overwrite the existing files.
+Then enable it in phpBB:
 
-Then in phpBB ACP:
+```text
+ACP → Customise → Manage extensions → Related Wiki Pages → Enable
+```
 
-    General > Purge the cache
+Then purge the phpBB cache.
 
-If phpBB acts odd after overwriting files, disable and re-enable the extension, then purge cache again.
+## Main configuration
 
-## Main config
+Configuration is currently hard-coded in:
 
-Edit these values in:
-
-    ext/mjklein/relatedwiki/event/listener.php
+```text
+ext/mjklein/relatedwiki/event/listener.php
+```
 
 Main values:
 
-    protected $enabled = true;
-    protected $admin_only_test_mode = true;
-    protected $allowed_forum_ids = array();
-    protected $blocked_forum_ids = array();
-    protected $wiki_api = 'https://behringer.world/mediawiki/api.php';
-    protected $wiki_page_base = 'https://behringer.world/mediawiki/index.php/';
-    protected $max_results = 5;
-    protected $cache_seconds = 86400;
-    protected $request_timeout = 2;
+```php
+protected $enabled = true;
+protected $admin_only_test_mode = true;
+protected $allowed_forum_ids = array();
+protected $blocked_forum_ids = array();
+
+protected $wiki_api = 'https://behringer.world/mediawiki/api.php';
+protected $wiki_page_base = 'https://behringer.world/mediawiki/index.php/';
+
+protected $max_results = 5;
+protected $cache_seconds = 86400;
+protected $request_timeout = 2;
+```
 
 First-post search:
 
-    protected $use_first_post_text = true;
-    protected $first_post_excerpt_chars = 500;
+```php
+protected $use_first_post_text = true;
+protected $first_post_excerpt_chars = 500;
+```
 
 ## Optional forum allowlist
 
 To show related wiki pages only in selected forums, set forum IDs like this:
 
-    protected $allowed_forum_ids = array(2, 7, 14);
+```php
+protected $allowed_forum_ids = array(2, 7, 14);
+```
 
 Leave it empty to allow all forums.
 
@@ -83,16 +114,20 @@ Leave it empty to allow all forums.
 
 Aliases are configured in:
 
-    protected $alias_searches = array(...);
+```php
+protected $alias_searches = array(...);
+```
 
-These are additional search hints. They do not replace normal search.
+These are additional search hints. They do not replace normal MediaWiki search.
 
 ## Notes
 
-This is still an MVP.
+This is still an MVP / alpha release.
 
 It does not include an ACP settings page yet.
 
+It does not include language files yet.
+
 It does not modify the database.
 
-It reads the first post from phpBB's viewtopic data when available; it does not query the phpBB database separately.
+It reads the first post from phpBB's normal topic view data when available; it does not query the phpBB database separately.
