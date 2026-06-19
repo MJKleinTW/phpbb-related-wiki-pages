@@ -21,34 +21,35 @@ class listener implements EventSubscriberInterface
     protected $auth;
 
     /*
-     * SAFETY DEFAULTS
+     * PUBLIC-SAFE DEFAULTS
      *
-     * admin_only_test_mode = true means only board admins trigger the wiki lookup
-     * and only board admins see the Related Wiki Pages box.
+     * This GitHub/public alpha version is disabled by default and does not point
+     * to any real wiki. Before enabling this extension, configure:
      *
-     * When stable, change admin_only_test_mode to false.
+     *   $wiki_api
+     *   $wiki_page_base
+     *   $enabled
+     *
+     * For site-specific installs, you may also configure aliases below.
      */
-    protected $enabled = true;
+    protected $enabled = false;
     protected $admin_only_test_mode = true;
 
     /*
      * Optional forum controls.
-     *
-     * Leave allowed_forum_ids empty to allow all forums.
-     * Add forum IDs to restrict the box to only those forums.
      */
     protected $allowed_forum_ids = array();
-
-    /*
-     * Add forum IDs here if you never want related wiki pages shown there.
-     */
     protected $blocked_forum_ids = array();
 
     /*
      * Wiki settings.
+     *
+     * IMPORTANT:
+     * These are intentionally example values. Replace them with your own
+     * MediaWiki API URL and wiki page base URL before enabling the extension.
      */
-    protected $wiki_api = 'https://behringer.world/mediawiki/api.php';
-    protected $wiki_page_base = 'https://behringer.world/mediawiki/index.php/';
+    protected $wiki_api = 'https://example.com/mediawiki/api.php';
+    protected $wiki_page_base = 'https://example.com/mediawiki/index.php/';
     protected $max_results = 5;
     protected $cache_seconds = 86400; // 24 hours
     protected $request_timeout = 2;   // seconds
@@ -67,100 +68,21 @@ class listener implements EventSubscriberInterface
     protected $max_search_attempts = 7;
 
     /*
-     * Domain-specific search aliases.
+     * Optional site-specific aliases.
      *
-     * These are not the main search. They are extra hints when common forum wording
-     * does not match the exact wiki page title.
+     * These are extra search hints for terminology used by your community.
+     * They do not replace normal MediaWiki search.
+     *
+     * Example:
+     *
+     * protected $alias_searches = array(
+     *     'nickname or common term' => array(
+     *         'Exact Wiki Page Title',
+     *         'Another Related Wiki Page'
+     *     ),
+     * );
      */
-    protected $alias_searches = array(
-        'dante' => array(
-            'WING Dante',
-            'Flash WING Dante',
-            'Gary Higgins Dante',
-        ),
-        'internal dante' => array(
-            'WING Dante',
-            'Flash WING Dante',
-            'Dante card WING',
-        ),
-        'dante card' => array(
-            'WING Dante',
-            'Flash WING Dante',
-            'Gary Higgins Dante',
-        ),
-        'midi' => array(
-            'WING MIDI Table',
-            'X32 MIDI Table',
-            'X-Air MIDI',
-            'P16 MIDI Table',
-        ),
-        'osc' => array(
-            'X-Air OSC',
-            'X32 OSC',
-        ),
-        'hub4' => array(
-            'Hub4 DP48 Routing',
-            'Ultranet Transfer',
-        ),
-        'dp48' => array(
-            'Hub4 DP48 Routing',
-            'Ultranet Transfer',
-        ),
-        'ultranet' => array(
-            'Ultranet Transfer',
-            'Hub4 DP48 Routing',
-            'P16 MIDI Table',
-        ),
-        'stagebox' => array(
-            'A H Stageboxes With WING',
-            'Yamaha TIO Stageboxes',
-            'S16 Configuration',
-            'WING Rack Stagebox',
-        ),
-        'stageboxes' => array(
-            'A H Stageboxes With WING',
-            'Yamaha TIO Stageboxes',
-            'S16 Configuration',
-            'WING Rack Stagebox',
-        ),
-        's16' => array(
-            'S16 Configuration',
-            'X32 Rack As S16',
-        ),
-        'routing' => array(
-            'WING Routing',
-            'Hub4 DP48 Routing',
-            'Sidechain Bus To Bus',
-        ),
-        'sidechain' => array(
-            'Sidechain Bus To Bus',
-        ),
-        'scene' => array(
-            'Scene Export',
-            'Snap Export',
-        ),
-        'snapshot' => array(
-            'Snap Export',
-            'Scene Export',
-        ),
-        'snapshots' => array(
-            'Snap Export',
-            'Scene Export',
-        ),
-        'wifi' => array(
-            'WiFi Best Practice',
-        ),
-        'ethercon' => array(
-            'Neutrik Ethercon',
-        ),
-        'yamaha tio' => array(
-            'Yamaha TIO Stageboxes',
-        ),
-        'x32 rack' => array(
-            'X32 Rack As S16',
-            'X32 Rack Ps Repair',
-        ),
-    );
+    protected $alias_searches = array();
 
     public function __construct(
         \phpbb\template\template $template,
@@ -183,6 +105,11 @@ class listener implements EventSubscriberInterface
     public function show_related_wiki_pages($event)
     {
         if (!$this->enabled)
+        {
+            return;
+        }
+
+        if ($this->wiki_api === '' || $this->wiki_page_base === '')
         {
             return;
         }
@@ -218,7 +145,7 @@ class listener implements EventSubscriberInterface
         $first_post_text = $this->use_first_post_text ? $first_post_data['text'] : '';
         $first_post_stamp = $first_post_data['stamp'];
 
-        $cache_key = '_relatedwiki_v04_' . md5($topic_id . ':' . $topic_title . ':' . $first_post_stamp . ':' . $this->short_hash($first_post_text));
+        $cache_key = '_relatedwiki_v041_' . md5($topic_id . ':' . $topic_title . ':' . $first_post_stamp . ':' . $this->short_hash($first_post_text));
         $pages = $this->cache->get($cache_key);
 
         if ($pages === false)
@@ -328,17 +255,10 @@ class listener implements EventSubscriberInterface
     {
         $text = (string) $text;
 
-        /*
-         * Remove common phpBB BBCode blocks that create noisy search input.
-         */
         $text = preg_replace('/\[quote(?:=[^\]]*)?\].*?\[\/quote\]/isu', ' ', $text);
         $text = preg_replace('/\[code\].*?\[\/code\]/isu', ' ', $text);
         $text = preg_replace('/\[url(?:=[^\]]*)?\].*?\[\/url\]/isu', ' ', $text);
         $text = preg_replace('/https?:\/\/\S+/iu', ' ', $text);
-
-        /*
-         * Strip remaining BBCode tags.
-         */
         $text = preg_replace('/\[[^\]]+\]/u', ' ', $text);
 
         $text = html_entity_decode(strip_tags($text), ENT_QUOTES, 'UTF-8');
@@ -564,10 +484,7 @@ class listener implements EventSubscriberInterface
                 continue;
             }
 
-            /*
-             * Keep short known technical tokens.
-             */
-            if (utf8_strlen($word) < 3 && !preg_match('/^(x32|m32)$/iu', $word))
+            if (utf8_strlen($word) < 3)
             {
                 continue;
             }
@@ -684,7 +601,7 @@ class listener implements EventSubscriberInterface
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->request_timeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->request_timeout);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'BehringerWorldRelatedWiki/0.4');
+            curl_setopt($ch, CURLOPT_USERAGENT, 'phpBBRelatedWikiPages/0.4.1-alpha');
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
@@ -710,7 +627,7 @@ class listener implements EventSubscriberInterface
         $context = stream_context_create(array(
             'http' => array(
                 'timeout' => $this->request_timeout,
-                'header'  => "User-Agent: BehringerWorldRelatedWiki/0.4\r\n",
+                'header'  => "User-Agent: phpBBRelatedWikiPages/0.4.1-alpha\r\n",
             ),
             'ssl' => array(
                 'verify_peer' => true,

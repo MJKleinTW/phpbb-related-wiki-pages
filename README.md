@@ -1,12 +1,34 @@
 # Related Wiki Pages for phpBB
 
-Version: 0.4.0-alpha
+Version: 0.4.1-alpha
 
 This phpBB extension shows a **Related Wiki Pages** box on phpBB topic pages.
 
 It searches a configured MediaWiki site using the current topic title and optional first-post text, then displays matching wiki pages inside the phpBB topic view.
 
 This was originally developed for Behringer World to connect forum discussions with related MediaWiki documentation.
+
+## Important configuration warning
+
+This public alpha release does **not** come preconfigured for any real wiki.
+
+Before installing or enabling this extension, edit:
+
+```text
+event/listener.php
+```
+
+and configure your own MediaWiki API URL and page base URL.
+
+The public-safe defaults are intentionally disabled and use example URLs only:
+
+```php
+protected $enabled = false;
+protected $wiki_api = 'https://example.com/mediawiki/api.php';
+protected $wiki_page_base = 'https://example.com/mediawiki/index.php/';
+```
+
+Do not enable the extension until those values are configured for your own site.
 
 ## Project status
 
@@ -31,7 +53,7 @@ Developers are welcome to fork this project, improve it, or turn it into a more 
 
 ## Safety default
 
-Admin-only test mode is enabled by default.
+The public alpha is disabled by default.
 
 In:
 
@@ -40,6 +62,18 @@ ext/mjklein/relatedwiki/event/listener.php
 ```
 
 the setting is:
+
+```php
+protected $enabled = false;
+```
+
+After configuring your own wiki URLs, change it to:
+
+```php
+protected $enabled = true;
+```
+
+Admin-only test mode is also enabled by default:
 
 ```php
 protected $admin_only_test_mode = true;
@@ -80,13 +114,13 @@ ext/mjklein/relatedwiki/event/listener.php
 Main values:
 
 ```php
-protected $enabled = true;
+protected $enabled = false;
 protected $admin_only_test_mode = true;
 protected $allowed_forum_ids = array();
 protected $blocked_forum_ids = array();
 
-protected $wiki_api = 'https://behringer.world/mediawiki/api.php';
-protected $wiki_page_base = 'https://behringer.world/mediawiki/index.php/';
+protected $wiki_api = 'https://example.com/mediawiki/api.php';
+protected $wiki_page_base = 'https://example.com/mediawiki/index.php/';
 
 protected $max_results = 5;
 protected $cache_seconds = 86400;
@@ -115,10 +149,21 @@ Leave it empty to allow all forums.
 Aliases are configured in:
 
 ```php
-protected $alias_searches = array(...);
+protected $alias_searches = array();
 ```
 
 These are additional search hints. They do not replace normal MediaWiki search.
+
+Example:
+
+```php
+protected $alias_searches = array(
+    'common forum term' => array(
+        'Exact Wiki Page Title',
+        'Another Related Wiki Page'
+    ),
+);
+```
 
 ## Notes
 
